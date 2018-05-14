@@ -31,6 +31,7 @@ static char *ngx_http_concat_merge_loc_conf(ngx_conf_t *cf, void *parent,
 
 static ngx_str_t  ngx_http_concat_default_types[] = {
     ngx_string("application/x-javascript"),
+    ngx_string("application/javascript"),
     ngx_string("text/css"),
     ngx_null_string
 };
@@ -181,7 +182,11 @@ ngx_http_concat_handler(ngx_http_request_t *r)
     e = r->args.data + r->args.len;
     for (p = r->args.data + 1, v = p, timestamp = 0; p != e; p++) {
 
-        if (*p == ',') {
+        /* 修复在被劫持后添加参数导致400错误使其加载失败的问题 */
+        /* 如果碰到 & 或 # 时，则直接跳出循环 */
+        if(*p == '&' || *p == '#'){
+            break;
+        }else if (*p == ',') {
             if (p == v || timestamp == 1) {
                 v = p + 1;
                 timestamp = 0;
